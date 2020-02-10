@@ -6,6 +6,7 @@ from math import sqrt
 from math import pi
 from math import exp
 from sklearn.preprocessing import LabelEncoder
+import matplotlib.pyplot as plt
 
 
 class NaiveBaye:
@@ -39,10 +40,10 @@ class NaiveBaye:
 
     def probability(self, x, mean, stdev):
         if stdev == 0:
-            stdev = 0.0001
-            # return 0
-        exponent = exp(-((x - mean)**2 / (2 * stdev**2)))
-        return (1 / (sqrt(2 * pi) * stdev)) * exponent
+            return 1
+        denominator = (sqrt(2 * pi) * stdev)
+        numarator = exp(-((x - mean)**2 / (2 * stdev**2)))
+        return numarator / denominator
 
     def likelihood(self, summaries, row):
         total_rows = sum([summaries[label][0][2] for label in summaries])
@@ -109,15 +110,56 @@ class NaiveBaye:
             predicted = algorithm(train_set, test_set, *args)
             actual = [row[-1] for row in fold]
             accuracy = self.evaluate_acc(actual, predicted)
+            self.plot_accuracy(predicted, actual)
             scores.append(accuracy)
         return scores
+
+    def plot_accuracy(self, y_predicted, y_true):
+        # plt.close()
+        x_data = range(len(y_true))
+        plt.scatter(x_data, y_predicted, c='b', label='predicted')
+        plt.scatter(x_data, y_true, c='r', label='true')
+        plt.title("accuracy")
+        plt.ylim(0, 1)
+        plt.show()
     # --------------------------------------------------------------------------------#
 
     def main(self):
 
-        # Ionosphere Dataset
-        dataframe = pd.read_csv("data/ionosphere.data", header=None)
-        array = dataframe.values
+        # # Ionosphere Dataset
+        # dataframe = pd.read_csv("data/ionosphere.data", header=None)
+        # array = dataframe.values
+        # X = array[:, :-1]
+        # y = array[:, -1:]
+        # y = LabelEncoder().fit_transform(array[:, -1:].ravel())
+        # X = X.tolist()
+        # y = y.tolist()
+        # array = X
+        # for i in range(len(X)):
+        #     array[i].append(y[i])
+        # k_folds = 5
+        # scores = self.evaluate_algorithm(array, self.fit, k_folds)
+        # print('Ionosphere data set: ')
+        # print('Scores: %s' % scores)
+        # print('Mean Accuracy: %.3f%%' % (sum(scores) / float(len(scores))))
+
+        # # Adult Dataset
+        # dataframe = pd.read_csv("data/adult.data", header=None)
+        # dataframe = dataframe.apply(LabelEncoder().fit_transform)
+        # values = dataframe.values
+        # array = values.tolist()
+        # k_folds = 5
+        # scores = self.evaluate_algorithm(array, self.fit, k_folds)
+        # print('Adult Dataset: ')
+        # print('Scores: %s' % scores)
+        # print('Mean Accuracy: %.3f%%' % (sum(scores) / float(len(scores))))
+
+        # Breast-Cancer-Wisconsin Dataset
+        dataframe = pd.read_csv("data/breast-cancer-wisconsin.data", header=None)
+        dataframe = dataframe.replace(to_replace="?", value=np.nan)
+        dataframe = dataframe.dropna()
+        #dataframe = dataframe.apply(LabelEncoder().fit_transform)
+        array = dataframe.values.astype(np.float)
         X = array[:, :-1]
         y = array[:, -1:]
         y = LabelEncoder().fit_transform(array[:, -1:].ravel())
@@ -128,39 +170,19 @@ class NaiveBaye:
             array[i].append(y[i])
         k_folds = 5
         scores = self.evaluate_algorithm(array, self.fit, k_folds)
+        print('Breast-Cancer Dataset: ')
         print('Scores: %s' % scores)
         print('Mean Accuracy: %.3f%%' % (sum(scores) / float(len(scores))))
 
-        # Adult Dataset
-        dataframe = pd.read_csv("data/adult.data", header=None)
-        dataframe = dataframe.apply(LabelEncoder().fit_transform)
-        values = dataframe.values
-        array = values.tolist()
-        k_folds = 5
-        scores = self.evaluate_algorithm(array, self.fit, k_folds)
-        print('Scores: %s' % scores)
-        print('Mean Accuracy: %.3f%%' % (sum(scores) / float(len(scores))))
-
-        # Breast-Cancer Dataset
-        dataframe = pd.read_csv("data/breast-cancer.data", header=None)
-        dataframe = dataframe.replace(to_replace="?", value=np.nan)
-        dataframe = dataframe.dropna()
-        dataframe = dataframe.apply(LabelEncoder().fit_transform)
-        values = dataframe.values
-        array = values.tolist()
-        k_folds = 5
-        scores = self.evaluate_algorithm(array, self.fit, k_folds)
-        print('Scores: %s' % scores)
-        print('Mean Accuracy: %.3f%%' % (sum(scores) / float(len(scores))))
-
-        # Wine Dataset
-        dataframe = pd.read_csv("data/winequality-red.csv", sep=';', header=None, skiprows=1)
-        values = dataframe.values
-        array = values.tolist()
-        k_folds = 5
-        scores = self.evaluate_algorithm(array, self.fit, k_folds)
-        print('Scores: %s' % scores)
-        print('Mean Accuracy: %.3f%%' % (sum(scores) / float(len(scores))))
+        # # Wine Dataset
+        # dataframe = pd.read_csv("data/winequality-red.csv", sep=';', header=None, skiprows=1)
+        # values = dataframe.values
+        # array = values.tolist()
+        # k_folds = 5
+        # scores = self.evaluate_algorithm(array, self.fit, k_folds)
+        # print('Wine Dataset: ')
+        # print('Scores: %s' % scores)
+        # print('Mean Accuracy: %.3f%%' % (sum(scores) / float(len(scores))))
 
 
 if __name__ == '__main__':
