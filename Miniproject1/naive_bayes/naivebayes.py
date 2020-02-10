@@ -1,119 +1,170 @@
-from preprocess import Preprocess
+# Naive Baye's implementation
+# Feel free to edit/change/delete anything, I honestly don't know if I did this right -Ali
 import numpy as np
-import warnings
 import pandas as pd
+from random import seed
+from random import randrange
+from math import sqrt
+from math import pi
+from math import exp
 from sklearn.preprocessing import LabelEncoder
 
 
-class NaiveBayes:
+class NaiveBaye:
 
-    _mean = []
-    _stdvar = []
-    _prior_probability = []
+    def separate_data(self, dataset):
+        separated = dict()
+        for i in range(len(dataset)):
+            vector = dataset[i]
+            class_value = vector[-1]
+            if (class_value not in separated):
+                separated[class_value] = list()
+            separated[class_value].append(vector)
+        return separated
 
-    def predict(self, X):
-        y_hat = [self.predict_single(x) for x in X]
-        return y_hat
+    # Calculate the following for each data point:
+    #   - mean
+    #   - standard deviation
+    #   - count
+    def dataset_statistics(self, dataset):
+        summaries = [(np.mean(column), np.std(column), len(column)) for column in zip(*dataset)]
+        del(summaries[-1])
+        return summaries
 
-    # Helper method for a single variable
-    def predict_single(self, x):
-        predictions = []
+    # Statistics for each row
+    def class_statistics(self, dataset):
+        separated = self.separate_data(dataset)
+        summaries = dict()
+        for class_value, rows in separated.items():
+            summaries[class_value] = self.dataset_statistics(rows)
+        return summaries
 
-        for idx, c in enumerate(self._classes):
-            prior = np.log(self._prior_probability[idx])
-            class_conditional = np.sum(np.log(self._pdf(idx, x)))
-            posterior = prior + class_conditional
-            predictions.append(posterior)
+    def probability(self, x, mean, stdev):
+        if stdev == 0:
+            stdev = 0.0001
+            # return 0
+        exponent = exp(-((x - mean)**2 / (2 * stdev**2)))
+        return (1 / (sqrt(2 * pi) * stdev)) * exponent
 
-        # Choose the class for the highest probability
-        return self._classes[np.argmax(predictions)]
+    def likelihood(self, summaries, row):
+        total_rows = sum([summaries[label][0][2] for label in summaries])
+        probabilities = dict()
+        for class_value, class_summaries in summaries.items():
+            probabilities[class_value] = summaries[class_value][0][2] / float(total_rows)
+            for i in range(len(class_summaries)):
+                mean, stdev, count = class_summaries[i]
+                probabilities[class_value] *= self.probability(row[i], mean, stdev)
+        return probabilities
 
-    # Probability density function (Gaussian)
-    def _pdf(self, class_idx, x):
-        mean = self._mean[class_idx]
-        var = self._stdvar[class_idx]
-        try:
-            denominator = np.sqrt(2 * np.pi * var)
-            numarator = np.exp(- (x - mean)**2 / (2 * var))
-            if np.all(numarator / denominator != 0):
-                return numarator / denominator
-            else:
-                return 1
-        except RuntimeWarning:
-            return 1
+    def predict(self, summaries, row):
+        probabilities = self.likelihood(summaries, row)
+        best_label, best_prob = None, -1
+        for class_value, probability in probabilities.items():
+            if best_label is None or probability > best_prob:
+                best_prob = probability
+                best_label = class_value
+        return best_label
 
-    # X: numpy nd array, rows = samples, columns = features
-    # y: 1-D row vector, size of number of samples
-    def fit(self, X, y):
-        # Unpack
-        n_samples, n_features = X.shape
+    def fit(self, train, test):
+        summarize = self.class_statistics(train)
+        predictions = list()
+        for row in test:
+            output = self.predict(summarize, row)
+            predictions.append(output)
+        return(predictions)
 
-        # Finds the number of unique elements in our output
-        self._classes = np.unique(y)
-
-        n_classes = len(self._classes)
-        # init mean, var, priors
-        self._mean = np.zeros((n_classes, n_features), dtype=np.float64)
-        self._stdvar = np.zeros((n_classes, n_features), dtype=np.float64)
-        self._prior_probability = np.zeros(n_classes, dtype=np.float64)
-
-        for c in self._classes:
-            X_c = X[c == y]
-            self._mean[c, :] = X_c.mean(axis=0)
-            self._stdvar[c, :] = X_c.var(axis=0)
-
-            # prior probability = frequency / total number of samples
-            self._prior_probability[c] = X_c.shape[0] / float(n_samples)
-
+    # Calculate accuracy percentage
     def evaluate_acc(self, y, y_hat):
-        accuracy = np.sum(y == y_hat) / len(y) * 100
-        return accuracy
+        correct_predictions = 0
+        for i in range(len(y)):
+            if y[i] == y_hat[i]:
+                correct_predictions += 1
+        return correct_predictions / float(len(y)) * 100.0
+
+    # K-fold cross validation
+    # --------------------------------------------------------------------------------#
+    def cross_validation_split(self, dataset, k_folds):
+        dataset_split = list()
+        dataset_copy = list(dataset)
+        fold_size = int(len(dataset) / k_folds)
+        for _ in range(k_folds):
+            fold = list()
+            while len(fold) < fold_size:
+                index = randrange(len(dataset_copy))
+                fold.append(dataset_copy.pop(index))
+            dataset_split.append(fold)
+        return dataset_split
+
+    # Evaluate an algorithm using a cross validation split
+    def evaluate_algorithm(self, dataset, algorithm, k_folds, *args):
+        folds = self.cross_validation_split(dataset, k_folds)
+        scores = list()
+        for fold in folds:
+            train_set = list(folds)
+            train_set.remove(fold)
+            train_set = sum(train_set, [])
+            test_set = list()
+            for row in fold:
+                row_copy = list(row)
+                test_set.append(row_copy)
+                row_copy[-1] = None
+            predicted = algorithm(train_set, test_set, *args)
+            actual = [row[-1] for row in fold]
+            accuracy = self.evaluate_acc(actual, predicted)
+            scores.append(accuracy)
+        return scores
+    # --------------------------------------------------------------------------------#
+
+    def main(self):
+
+        # Ionosphere Dataset
+        dataframe = pd.read_csv("data/ionosphere.data", header=None)
+        array = dataframe.values
+        X = array[:, :-1]
+        y = array[:, -1:]
+        y = LabelEncoder().fit_transform(array[:, -1:].ravel())
+        X = X.tolist()
+        y = y.tolist()
+        array = X
+        for i in range(len(X)):
+            array[i].append(y[i])
+        k_folds = 5
+        scores = self.evaluate_algorithm(array, self.fit, k_folds)
+        print('Scores: %s' % scores)
+        print('Mean Accuracy: %.3f%%' % (sum(scores) / float(len(scores))))
+
+        # Adult Dataset
+        dataframe = pd.read_csv("data/adult.data", header=None)
+        dataframe = dataframe.apply(LabelEncoder().fit_transform)
+        values = dataframe.values
+        array = values.tolist()
+        k_folds = 5
+        scores = self.evaluate_algorithm(array, self.fit, k_folds)
+        print('Scores: %s' % scores)
+        print('Mean Accuracy: %.3f%%' % (sum(scores) / float(len(scores))))
+
+        # Breast-Cancer Dataset
+        dataframe = pd.read_csv("data/breast-cancer.data", header=None)
+        dataframe = dataframe.replace(to_replace="?", value=np.nan)
+        dataframe = dataframe.dropna()
+        dataframe = dataframe.apply(LabelEncoder().fit_transform)
+        values = dataframe.values
+        array = values.tolist()
+        k_folds = 5
+        scores = self.evaluate_algorithm(array, self.fit, k_folds)
+        print('Scores: %s' % scores)
+        print('Mean Accuracy: %.3f%%' % (sum(scores) / float(len(scores))))
+
+        # Wine Dataset
+        dataframe = pd.read_csv("data/winequality-red.csv", sep=';', header=None, skiprows=1)
+        values = dataframe.values
+        array = values.tolist()
+        k_folds = 5
+        scores = self.evaluate_algorithm(array, self.fit, k_folds)
+        print('Scores: %s' % scores)
+        print('Mean Accuracy: %.3f%%' % (sum(scores) / float(len(scores))))
 
 
-# ----------------------------------------------------------------------------------- #
-warnings.filterwarnings("error")
-nb = NaiveBayes()
-
-# Ionosphere
-dataframe = Preprocess("data/ionosphere.data", "g")
-X = dataframe.X
-y = dataframe.y
-history = nb.fit(X, y)
-predictions = nb.predict(X)
-print("Accuracy in % for ionosphere dataset: ", nb.evaluate_acc(y, predictions))
-
-# # Adult
-# dataframe = pd.read_csv("data/adult.data", header=None)
-# dataframe = dataframe.apply(LabelEncoder().fit_transform)
-# array = dataframe.values
-# X = array[:, :-1]
-# y = array[:, -1:]
-# y = y.ravel()
-# nb.fit(X, y)
-# predictions = nb.predict(X)
-# print("Accuracy in % for adult dataset: ", nb.evaluate_acc(y, predictions))
-
-# # Breast-Cancer
-# dataframe = pd.read_csv("data/breast-cancer.data", header=None)
-# dataframe = dataframe.replace(to_replace="?", value=np.nan)
-# dataframe = dataframe.dropna()
-# dataframe = dataframe.apply(LabelEncoder().fit_transform)
-# array = dataframe.values
-# X = array[:, :-1]
-# y = array[:, -1:]
-# y = y.ravel()
-# nb.fit(X, y)
-# predictions = nb.predict(X)
-# print("Accuracy in % for breast-cancer dataset: ", nb.evaluate_acc(y, predictions))
-
-# # Wine
-# dataframe = pd.read_csv("data/winequality-red.csv", sep=';', header=None, skiprows=1)
-# array = dataframe.values
-# X = array[:, :-1]
-# y = array[:, -1:]
-# y = y.ravel()
-# y = LabelEncoder().fit_transform(y)
-# nb.fit(X, y)
-# predictions = nb.predict(X)
-# print("Accuracy in % for wine-quality dataset: ", nb.evaluate_acc(y, predictions))
-# ----------------------------------------------------------------------------------- #
+if __name__ == '__main__':
+    nm = NaiveBaye()
+    nm.main()
