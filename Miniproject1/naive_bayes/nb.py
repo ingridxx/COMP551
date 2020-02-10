@@ -66,8 +66,6 @@ class NaiveBayes:
             return 1
 
     def evaluate_acc(self, y, y_hat):
-        print(y_hat)
-        print(y)
         accuracy = np.sum(y == y_hat) / len(y) * 100
         return accuracy
 
