@@ -30,7 +30,8 @@ class NaiveBayes:
             X_c = X[c == y]
             self._mean[c, :] = X_c.mean(axis=0)
             self._stdvar[c, :] = X_c.var(axis=0)
-            # prior probability = frequency of the class / total number of samples
+
+            # prior probability = frequency / total number of samples
             self._prior_probability[c] = X_c.shape[0] / float(n_samples)
 
     def predict(self, X):
@@ -65,10 +66,12 @@ class NaiveBayes:
             return 1
 
     def evaluate_acc(self, y, y_hat):
+        print(y_hat)
+        print(y)
         accuracy = np.sum(y == y_hat) / len(y) * 100
         return accuracy
 
-
+#-----------------------------------------------------------------------------------#
 #np.seterr(divide='ignore', invalid='ignore')
 warnings.filterwarnings("error")
 nb = NaiveBayes()
@@ -115,3 +118,4 @@ y = LabelEncoder().fit_transform(y)
 nb.fit(X, y)
 predictions = nb.predict(X)
 print("Accuracy in % for wine-quality dataset: ", nb.evaluate_acc(y, predictions))
+#-----------------------------------------------------------------------------------#
