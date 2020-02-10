@@ -70,13 +70,12 @@ class NaiveBayes:
         return accuracy
 
 
-#-----------------------------------------------------------------------------------#
-#np.seterr(divide='ignore', invalid='ignore')
+# ----------------------------------------------------------------------------------- #
 warnings.filterwarnings("error")
 nb = NaiveBayes()
 
 # Ionosphere
-dataframe = Preprocess("ionosphere.data", "g")
+dataframe = Preprocess("data/ionosphere.data", "g")
 X = dataframe.X
 y = dataframe.y
 nb.fit(X, y)
@@ -84,7 +83,7 @@ predictions = nb.predict(X)
 print("Accuracy in % for ionosphere dataset: ", nb.evaluate_acc(y, predictions))
 
 # Adult
-dataframe = pd.read_csv("adult.data", header=None)
+dataframe = pd.read_csv("data/adult.data", header=None)
 dataframe = dataframe.apply(LabelEncoder().fit_transform)
 array = dataframe.values
 X = array[:, :-1]
@@ -95,7 +94,7 @@ predictions = nb.predict(X)
 print("Accuracy in % for adult dataset: ", nb.evaluate_acc(y, predictions))
 
 # Breast-Cancer
-dataframe = pd.read_csv("breast-cancer.data", header=None)
+dataframe = pd.read_csv("data/breast-cancer.data", header=None)
 dataframe = dataframe.replace(to_replace="?", value=np.nan)
 dataframe = dataframe.dropna()
 dataframe = dataframe.apply(LabelEncoder().fit_transform)
@@ -108,7 +107,7 @@ predictions = nb.predict(X)
 print("Accuracy in % for breast-cancer dataset: ", nb.evaluate_acc(y, predictions))
 
 # Wine
-dataframe = pd.read_csv("winequality-red.csv", sep=';', header=None, skiprows=1)
+dataframe = pd.read_csv("data/winequality-red.csv", sep=';', header=None, skiprows=1)
 array = dataframe.values
 X = array[:, :-1]
 y = array[:, -1:]
@@ -117,4 +116,4 @@ y = LabelEncoder().fit_transform(y)
 nb.fit(X, y)
 predictions = nb.predict(X)
 print("Accuracy in % for wine-quality dataset: ", nb.evaluate_acc(y, predictions))
-#-----------------------------------------------------------------------------------#
+# ----------------------------------------------------------------------------------- #
