@@ -11,29 +11,6 @@ class NaiveBayes:
     _stdvar = []
     _prior_probability = []
 
-    # X: numpy nd array, rows = samples, columns = features
-    # y: 1-D row vector, size of number of samples
-    def fit(self, X, y):
-        # Unpack
-        n_samples, n_features = X.shape
-
-        # Finds the number of unique elements in our output
-        self._classes = np.unique(y)
-
-        n_classes = len(self._classes)
-        # init mean, var, priors
-        self._mean = np.zeros((n_classes, n_features), dtype=np.float64)
-        self._stdvar = np.zeros((n_classes, n_features), dtype=np.float64)
-        self._prior_probability = np.zeros(n_classes, dtype=np.float64)
-
-        for c in self._classes:
-            X_c = X[c == y]
-            self._mean[c, :] = X_c.mean(axis=0)
-            self._stdvar[c, :] = X_c.var(axis=0)
-
-            # prior probability = frequency / total number of samples
-            self._prior_probability[c] = X_c.shape[0] / float(n_samples)
-
     def predict(self, X):
         y_hat = [self.predict_single(x) for x in X]
         return y_hat
@@ -64,6 +41,29 @@ class NaiveBayes:
                 return 1
         except RuntimeWarning:
             return 1
+
+    # X: numpy nd array, rows = samples, columns = features
+    # y: 1-D row vector, size of number of samples
+    def fit(self, X, y):
+        # Unpack
+        n_samples, n_features = X.shape
+
+        # Finds the number of unique elements in our output
+        self._classes = np.unique(y)
+
+        n_classes = len(self._classes)
+        # init mean, var, priors
+        self._mean = np.zeros((n_classes, n_features), dtype=np.float64)
+        self._stdvar = np.zeros((n_classes, n_features), dtype=np.float64)
+        self._prior_probability = np.zeros(n_classes, dtype=np.float64)
+
+        for c in self._classes:
+            X_c = X[c == y]
+            self._mean[c, :] = X_c.mean(axis=0)
+            self._stdvar[c, :] = X_c.var(axis=0)
+
+            # prior probability = frequency / total number of samples
+            self._prior_probability[c] = X_c.shape[0] / float(n_samples)
 
     def evaluate_acc(self, y, y_hat):
         accuracy = np.sum(y == y_hat) / len(y) * 100
