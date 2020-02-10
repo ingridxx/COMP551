@@ -1,5 +1,3 @@
-# Naive Baye's implementation
-# Feel free to edit/change/delete anything, I honestly don't know if I did this right -Ali
 import numpy as np
 import pandas as pd
 from random import seed
