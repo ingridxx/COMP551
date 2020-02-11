@@ -125,6 +125,7 @@ class NaiveBaye:
         df = pd.DataFrame(data, columns=['y_Actual', 'y_Predicted'])
         confusion_matrix = pd.crosstab(df['y_Actual'], df['y_Predicted'], rownames=['Actual'], colnames=['Predicted'])
         sn.heatmap(confusion_matrix, annot=True)
+        plt.title("Naive Bayes: Wine-Quality-Red")
         plt.show()
 
     def plot_accuracy(self, scores, instances):
