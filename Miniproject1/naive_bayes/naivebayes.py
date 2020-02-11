@@ -95,8 +95,8 @@ class NaiveBaye:
             dataset_split.append(fold)
         return dataset_split
 
-    # Evaluate an algorithm using a cross validation split
-    def evaluate_algorithm(self, dataset, algorithm, k_folds, *args):
+    # Cross validation split
+    def evaluate_algorithm(self, dataset, k_folds):
         instances = []
         folds = self.cross_validation_split(dataset, k_folds)
         scores = list()
@@ -110,7 +110,7 @@ class NaiveBaye:
                 row_copy = list(row)
                 test_set.append(row_copy)
                 row_copy[-1] = None
-            predicted = algorithm(train_set, test_set, *args)
+            predicted = self.fit(train_set, test_set)
             actual = [row[-1] for row in fold]
             accuracy = self.evaluate_acc(actual, predicted)
             instances.append(len(test_set) * (len(instances) + 1))
@@ -125,12 +125,12 @@ class NaiveBaye:
         df = pd.DataFrame(data, columns=['y_Actual', 'y_Predicted'])
         confusion_matrix = pd.crosstab(df['y_Actual'], df['y_Predicted'], rownames=['Actual'], colnames=['Predicted'])
         sn.heatmap(confusion_matrix, annot=True)
-        plt.title("Naive Bayes: Wine-Quality-Red")
+        plt.title("Naive Bayes: Ionosphere (k = 5)")
         plt.show()
 
     def plot_accuracy(self, scores, instances):
         plt.plot(instances, scores, c='b', label='predicted')
-        #plt.scatter(x_data, y_true, c='r', label='true')
+        # plt.scatter(x_data, y_true, c='r', label='true')
         plt.title("Accuracy vs. Instances")
         plt.ylim(0, 100)
         plt.show()
@@ -150,55 +150,55 @@ class NaiveBaye:
         for i in range(len(X)):
             array[i].append(y[i])
         k_folds = 5
-        scores = self.evaluate_algorithm(array, self.fit, k_folds)
+        scores = self.evaluate_algorithm(array, k_folds)
         print('#----------------------------------------#')
         print('Ionosphere data set: ')
         print('Scores: %s' % scores)
         print('Mean Accuracy: %.3f%%' % (sum(scores) / float(len(scores))))
 
-        # Adult Dataset
-        dataframe = pd.read_csv("data/adult.data", header=None)
-        dataframe = dataframe.apply(LabelEncoder().fit_transform)
-        values = dataframe.values
-        array = values.tolist()
-        k_folds = 5
-        scores = self.evaluate_algorithm(array, self.fit, k_folds)
-        print('#----------------------------------------#')
-        print('Adult Dataset: ')
-        print('Scores: %s' % scores)
-        print('Mean Accuracy: %.3f%%' % (sum(scores) / float(len(scores))))
-
-        # Breast-Cancer-Wisconsin Dataset
-        dataframe = pd.read_csv("data/breast-cancer-wisconsin.data", header=None)
-        dataframe = dataframe.replace(to_replace="?", value=np.nan)
-        dataframe = dataframe.dropna()
+        # # Adult Dataset
+        # dataframe = pd.read_csv("data/adult.data", header=None)
         # dataframe = dataframe.apply(LabelEncoder().fit_transform)
-        array = dataframe.values.astype(np.float)
-        X = array[:, :-1]
-        y = array[:, -1:]
-        y = LabelEncoder().fit_transform(array[:, -1:].ravel())
-        X = X.tolist()
-        y = y.tolist()
-        array = X
-        for i in range(len(X)):
-            array[i].append(y[i])
-        k_folds = 5
-        scores = self.evaluate_algorithm(array, self.fit, k_folds)
-        print('#----------------------------------------#')
-        print('Breast-Cancer Dataset: ')
-        print('Scores: %s' % scores)
-        print('Mean Accuracy: %.3f%%' % (sum(scores) / float(len(scores))))
+        # values = dataframe.values
+        # array = values.tolist()
+        # k_folds = 5
+        # scores = self.evaluate_algorithm(array, k_folds)
+        # print('#----------------------------------------#')
+        # print('Adult Dataset: ')
+        # print('Scores: %s' % scores)
+        # print('Mean Accuracy: %.3f%%' % (sum(scores) / float(len(scores))))
 
-        # Wine Dataset
-        dataframe = pd.read_csv("data/winequality-red.csv", sep=';', header=None, skiprows=1)
-        values = dataframe.values
-        array = values.tolist()
-        k_folds = 5
-        scores = self.evaluate_algorithm(array, self.fit, k_folds)
-        print('#----------------------------------------#')
-        print('Wine Dataset: ')
-        print('Scores: %s' % scores)
-        print('Mean Accuracy: %.3f%%' % (sum(scores) / float(len(scores))))
+        # # Breast-Cancer-Wisconsin Dataset
+        # dataframe = pd.read_csv("data/breast-cancer-wisconsin.data", header=None)
+        # dataframe = dataframe.replace(to_replace="?", value=np.nan)
+        # dataframe = dataframe.dropna()
+        # # dataframe = dataframe.apply(LabelEncoder().fit_transform)
+        # array = dataframe.values.astype(np.float)
+        # X = array[:, :-1]
+        # y = array[:, -1:]
+        # y = LabelEncoder().fit_transform(array[:, -1:].ravel())
+        # X = X.tolist()
+        # y = y.tolist()
+        # array = X
+        # for i in range(len(X)):
+        #     array[i].append(y[i])
+        # k_folds = 5
+        # scores = self.evaluate_algorithm(array, k_folds)
+        # print('#----------------------------------------#')
+        # print('Breast-Cancer Dataset: ')
+        # print('Scores: %s' % scores)
+        # print('Mean Accuracy: %.3f%%' % (sum(scores) / float(len(scores))))
+
+        # # Wine Dataset
+        # dataframe = pd.read_csv("data/winequality-red.csv", sep=';', header=None, skiprows=1)
+        # values = dataframe.values
+        # array = values.tolist()
+        # k_folds = 5
+        # scores = self.evaluate_algorithm(array, k_folds)
+        # print('#----------------------------------------#')
+        # print('Wine Dataset: ')
+        # print('Scores: %s' % scores)
+        # print('Mean Accuracy: %.3f%%' % (sum(scores) / float(len(scores))))
 
 
 if __name__ == '__main__':
