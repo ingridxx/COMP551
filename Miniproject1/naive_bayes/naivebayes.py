@@ -181,7 +181,7 @@ class NaiveBaye:
         array = X
         for i in range(len(X)):
             array[i].append(y[i])
-        k_folds = 10
+        k_folds = 5
         scores = self.evaluate_algorithm(array, self.fit, k_folds)
         print('#----------------------------------------#')
         print('Breast-Cancer Dataset: ')
